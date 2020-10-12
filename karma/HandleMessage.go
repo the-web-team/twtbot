@@ -19,16 +19,15 @@ const Decrement = "Decrement"
 
 type Model struct {
 	UserId string `bson:"userId"`
-	Karma int32 `bson:"karma"`
+	Karma  int32  `bson:"karma"`
 }
 
 type Operation struct {
-	UserId string
+	UserId     string
 	KarmaDelta int32
 }
 
 func HandleMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
-	log.Println(m.Content)
 	incRegex := regexp.MustCompile(`<@!(\d+)> ((--)|(\+\+))`)
 	matches := incRegex.FindAllString(m.Content, -1)
 	triedSelf := false
@@ -47,12 +46,12 @@ func HandleMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 			userIds = append(userIds, userId)
 			if strings.HasSuffix(match, "++") {
 				updates = append(updates, Operation{
-					UserId: userId,
+					UserId:     userId,
 					KarmaDelta: 1,
 				})
 			} else if strings.HasSuffix(match, "--") {
 				updates = append(updates, Operation{
-					UserId: userId,
+					UserId:     userId,
 					KarmaDelta: -1,
 				})
 			}
@@ -115,7 +114,7 @@ func getKarmaForMultipleUsers(userIds []string) map[string]int32 {
 		}
 		karmaRecords[karmaRecord.UserId] = karmaRecord.Karma
 	}
-	fmt.Println(karmaRecords)
+
 	return karmaRecords
 }
 
