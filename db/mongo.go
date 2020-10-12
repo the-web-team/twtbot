@@ -48,7 +48,5 @@ func getUri() string {
 		log.Fatal(errors.New("invalid mongo uri"))
 	}
 
-	log.Println(uri)
-
 	return uri
 }
