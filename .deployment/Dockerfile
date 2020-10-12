@@ -1,8 +1,7 @@
 FROM golang:latest as builder
 
 WORKDIR /go/src/twtbot
-
-COPY ./ /go/src/twtbot/
+COPY . /go/src/twtbot
 
 RUN go mod vendor
 
@@ -18,4 +17,4 @@ RUN apk add --update ca-certificates
 
 COPY --from=builder /go/src/twtbot/twtbot /var/app/twtbot
 
-CMD /var/app/twtbot
+CMD ./twtbot
