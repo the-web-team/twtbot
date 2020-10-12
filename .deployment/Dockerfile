@@ -14,6 +14,7 @@ FROM alpine:latest
 WORKDIR /var/app
 
 RUN apk add --update ca-certificates
+RUN apk add --no-cache libc6-compat
 
 COPY --from=builder /go/src/twtbot/twtbot /var/app/twtbot
 
