@@ -32,7 +32,7 @@ func Connect() (*mongo.Client, *mongo.Database) {
 		dbConn = session
 	}
 
-	return dbConn, dbConn.Database("thewebteam")
+	return dbConn, dbConn.Database(os.Getenv("MONGO_DATABASE_NAME"))
 }
 
 func getUri() string {
