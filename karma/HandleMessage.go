@@ -14,9 +14,6 @@ import (
 	"twtbot/db"
 )
 
-const Increment = "Increment"
-const Decrement = "Decrement"
-
 type Model struct {
 	UserId string `bson:"userId"`
 	Karma  int32  `bson:"karma"`
