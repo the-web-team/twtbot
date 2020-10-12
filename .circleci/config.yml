@@ -20,7 +20,7 @@ jobs:
           name: Build and Push Docker Image
           command: |
             docker login -u ${DOCKER_USERNAME} -p ${DOCKER_PASSWORD} ${DOCKER_REGISTRY_URL}
-            docker build -t ${DOCKER_REGISTRY_URL}/${DOCKER_USERNAME}/twtbot/bot:${CIRCLE_SHA1} .
+            docker build -f .deployment/Dockerfile -t ${DOCKER_REGISTRY_URL}/${DOCKER_USERNAME}/twtbot/bot:${CIRCLE_SHA1} .
             docker push ${DOCKER_REGISTRY_URL}/${DOCKER_USERNAME}/twtbot/bot:${CIRCLE_SHA1}
   deploy: &deploy
     <<: *docker_defaults
