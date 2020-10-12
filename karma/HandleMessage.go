@@ -25,16 +25,14 @@ type Operation struct {
 }
 
 func HandleMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
-	incRegex := regexp.MustCompile(`<@!(\d+)> ((--)|(\+\+))`)
-	matches := incRegex.FindAllString(m.Content, -1)
+	matches := regexp.MustCompile(`<@!(\d+)> ((--)|(\+\+))`).FindAllString(m.Content, -1)
 	triedSelf := false
 
 	if len(matches) > 0 {
 		var userIds []string
 		var updates []Operation
 		for _, match := range matches {
-			userIdRegex := regexp.MustCompile(`\d+`)
-			userId := userIdRegex.FindString(match)
+			userId := regexp.MustCompile(`\d+`).FindString(match)
 			if userId == m.Author.ID {
 				// Cannot give/remove karma to yourself
 				triedSelf = true
