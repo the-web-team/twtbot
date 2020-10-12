@@ -8,9 +8,12 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"twtbot/karma"
 )
+
+const Prefix = "!b"
 
 var AuthToken string
 
@@ -56,5 +59,9 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		return
 	}
 
-	go karma.HandleMessageCreate(s, m)
+	if strings.HasPrefix(m.Content, Prefix) {
+		// None yet
+	} else {
+		go karma.HandleMessageCreate(s, m)
+	}
 }
