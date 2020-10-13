@@ -11,6 +11,7 @@ import (
 	"strings"
 	"syscall"
 	"twtbot/karma"
+	"twtbot/points"
 	"twtbot/rearrange"
 )
 
@@ -51,6 +52,9 @@ func main() {
 		_ = discord.Close()
 	}()
 
+	// Start Services
+	points.StartService()
+
 	fmt.Println("Discord Bot is running...")
 	sc := make(chan os.Signal, 1)
 	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt, os.Kill)
@@ -73,6 +77,9 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	if strings.HasPrefix(m.Content, Prefix) {
 		// None yet
 	} else {
+		// Points Manager
+		go points.HandleMessageCreate(s, m)
+
 		// Rearrange
 		go func() {
 			if rearrangeError := rearrange.HandleMessageCreate(s, m); rearrangeError != nil {

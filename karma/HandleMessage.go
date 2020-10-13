@@ -79,7 +79,7 @@ func HandleMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) error
 			}
 
 			if len(replies) > 0 {
-				_, sendError := s.ChannelMessageSend(m.ChannelID, strings.Join(replies, ", "))
+				_, sendError := s.ChannelMessageSend(m.ChannelID, strings.Join(replies, "\n"))
 				if sendError != nil {
 					return sendError
 				}
