@@ -11,6 +11,7 @@ import (
 	"strings"
 	"syscall"
 	"twtbot/karma"
+	"twtbot/rearrange"
 )
 
 const Prefix = "!b"
@@ -46,7 +47,9 @@ func main() {
 		fmt.Println("error opening discord connection")
 		log.Fatal(openError)
 	}
-	defer discord.Close()
+	defer func() {
+		_ = discord.Close()
+	}()
 
 	fmt.Println("Discord Bot is running...")
 	sc := make(chan os.Signal, 1)
@@ -59,9 +62,29 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		return
 	}
 
+	handleError := func(err error) {
+		errorText := ":exclamation::exclamation::exclamation::exclamation: Error ```%s```"
+		_, sendError := s.ChannelMessageSend(m.ChannelID, fmt.Sprintf(errorText, err.Error()))
+		if sendError != nil {
+			log.Fatal(sendError)
+		}
+	}
+
 	if strings.HasPrefix(m.Content, Prefix) {
 		// None yet
 	} else {
-		go karma.HandleMessageCreate(s, m)
+		// Rearrange
+		go func() {
+			if rearrangeError := rearrange.HandleMessageCreate(s, m); rearrangeError != nil {
+				handleError(rearrangeError)
+			}
+		}()
+
+		// Karma
+		go func() {
+			if karmaError := karma.HandleMessageCreate(s, m); karmaError != nil {
+				handleError(karmaError)
+			}
+		}()
 	}
 }

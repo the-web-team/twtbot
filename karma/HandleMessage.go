@@ -7,7 +7,6 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"log"
 	"math/rand"
 	"regexp"
 	"strings"
@@ -24,7 +23,7 @@ type Operation struct {
 	KarmaDelta int32
 }
 
-func HandleMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
+func HandleMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) error {
 	matches := regexp.MustCompile(`<@!(\d+)> ((--)|(\+\+))`).FindAllString(m.Content, -1)
 	triedSelf := false
 
@@ -53,14 +52,20 @@ func HandleMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		}
 
 		if len(updates) > 0 {
-			updateKarmaForMultipleUsers(updates)
-			karmaRecords := getKarmaForMultipleUsers(userIds)
+			if updateError := updateKarmaForMultipleUsers(updates); updateError != nil {
+				return updateError
+			}
+
+			karmaRecords, getError := getKarmaForMultipleUsers(userIds)
+			if getError != nil {
+				return getError
+			}
 
 			var replies []string
 			for _, update := range updates {
 				user, userError := s.User(update.UserId)
 				if userError != nil {
-					log.Fatal(userError)
+					return userError
 				}
 
 				newKarma := karmaRecords[update.UserId]
@@ -76,44 +81,50 @@ func HandleMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 			if len(replies) > 0 {
 				_, sendError := s.ChannelMessageSend(m.ChannelID, strings.Join(replies, ", "))
 				if sendError != nil {
-					log.Fatal(sendError)
+					return sendError
 				}
 			}
 		}
 
 		if triedSelf {
-			_, sendError := s.ChannelMessageSend(m.ChannelID, fmt.Sprintf("%s... You cannot give or take karma from yourself!", m.Author.Mention()))
-			if sendError != nil {
-				log.Fatal(sendError)
+			if typingError := s.ChannelTyping(m.ChannelID); typingError != nil {
+				return typingError
+			}
+			if _, sendError := s.ChannelMessageSend(m.ChannelID, fmt.Sprintf("%s... You cannot give or take karma from yourself!", m.Author.Mention())); sendError != nil {
+				return sendError
 			}
 		}
 	}
+
+	return nil
 }
 
-func getKarmaForMultipleUsers(userIds []string) map[string]int32 {
+func getKarmaForMultipleUsers(userIds []string) (map[string]int32, error) {
 	filter := bson.D{{"userId", bson.D{{"$in", userIds}}}}
 
 	collection := getCollection()
 	ctx := context.Background()
 	cursor, findErr := collection.Find(ctx, filter)
 	if findErr != nil {
-		log.Fatal(findErr)
+		return nil, findErr
 	}
-	defer cursor.Close(ctx)
+	defer func() {
+		_ = cursor.Close(ctx)
+	}()
 
 	karmaRecords := make(map[string]int32)
 	for cursor.Next(ctx) {
 		var karmaRecord Model
 		if cursorError := cursor.Decode(&karmaRecord); cursorError != nil {
-			log.Fatal(cursorError)
+			return nil, cursorError
 		}
 		karmaRecords[karmaRecord.UserId] = karmaRecord.Karma
 	}
 
-	return karmaRecords
+	return karmaRecords, nil
 }
 
-func updateKarmaForMultipleUsers(karmaOperations []Operation) {
+func updateKarmaForMultipleUsers(karmaOperations []Operation) error {
 	var operations []mongo.WriteModel
 	bulkOptions := options.BulkWrite()
 
@@ -134,9 +145,11 @@ func updateKarmaForMultipleUsers(karmaOperations []Operation) {
 		collection := getCollection()
 		_, bulkWriteError := collection.BulkWrite(context.TODO(), operations, bulkOptions)
 		if bulkWriteError != nil {
-			log.Fatal(bulkWriteError)
+			return bulkWriteError
 		}
 	}
+
+	return nil
 }
 
 func getCollection() *mongo.Collection {
