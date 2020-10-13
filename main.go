@@ -52,6 +52,10 @@ func main() {
 		_ = discord.Close()
 	}()
 
+	if statusError := discord.UpdateListeningStatus("you via your Google Home"); statusError != nil {
+		log.Fatal(statusError)
+	}
+
 	// Start Services
 	points.StartService()
 
