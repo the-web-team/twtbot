@@ -2,7 +2,6 @@ package rearrange
 
 import (
 	"github.com/bwmarrin/discordgo"
-	"log"
 	"sort"
 )
 
@@ -39,9 +38,7 @@ func rearrange(s *discordgo.Session, guildId string, channelId string) error {
 		for i, ch := range channels {
 			ch.Position = i
 		}
-		if reorderError := s.GuildChannelsReorder(guildId, channels); reorderError != nil {
-			log.Fatal(reorderError)
-		}
+		return s.GuildChannelsReorder(guildId, channels)
 	}
 
 	return nil
