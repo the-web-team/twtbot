@@ -71,10 +71,12 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	}
 
 	handleError := func(err error) {
-		errorText := ":exclamation::exclamation::exclamation::exclamation: Error ```%s```"
-		_, sendError := s.ChannelMessageSend(m.ChannelID, fmt.Sprintf(errorText, err.Error()))
-		if sendError != nil {
-			log.Fatal(sendError)
+		if err != nil {
+			errorText := ":exclamation::exclamation::exclamation::exclamation: Error ```%s```"
+			_, sendError := s.ChannelMessageSend(m.ChannelID, fmt.Sprintf(errorText, err.Error()))
+			if sendError != nil {
+				log.Fatal(sendError)
+			}
 		}
 	}
 
@@ -86,16 +88,12 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 		// Rearrange
 		go func() {
-			if rearrangeError := rearrange.HandleMessageCreate(s, m); rearrangeError != nil {
-				handleError(rearrangeError)
-			}
+			handleError(rearrange.HandleMessageCreate(s, m))
 		}()
 
 		// Karma
 		go func() {
-			if karmaError := karma.HandleMessageCreate(s, m); karmaError != nil {
-				handleError(karmaError)
-			}
+			handleError(karma.HandleMessageCreate(s, m))
 		}()
 	}
 }
