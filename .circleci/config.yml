@@ -31,10 +31,9 @@ jobs:
           kubeconfig: KUBE_CONFIG
       - run:
           name: Download s5s
-          command: curl -L https://github.com/Vinlock/s5s/releases/download/linux-latest/s5s > s5s
-      - run:
-          name: Set Permissions
-          command: chmod +x ./s5s
+          command: |
+            curl -L https://github.com/Vinlock/s5s/releases/download/linux-latest/s5s > s5s
+            chmod +x ./s5s
       - run:
           name: Apply Secrets
           command: ./s5s aws -o twtbot-secrets -s $AWS_SECRETS --accessKeyId $AWS_ACCESS_KEY_ID --accessKey $AWS_SECRET_ACCESS_KEY | kubectl apply -n thewebteam -f -
