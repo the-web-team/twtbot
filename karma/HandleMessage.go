@@ -24,7 +24,7 @@ type Operation struct {
 }
 
 func HandleMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) error {
-	matches := regexp.MustCompile(`<@!(\d+)> ((--)|(\+\+))`).FindAllString(m.Content, -1)
+	matches := regexp.MustCompile(`<@!?(\d+)> ((--)|(\+\+))`).FindAllString(m.Content, -1)
 	triedSelf := false
 
 	if len(matches) > 0 {
