@@ -8,7 +8,6 @@ import (
 	"log"
 	"os"
 	"os/signal"
-	"strings"
 	"syscall"
 	"twtbot/karma"
 	"twtbot/points"
@@ -18,6 +17,14 @@ import (
 const Prefix = "!b"
 
 var AuthToken string
+
+type MessageHandler func(session *discordgo.Session, m *discordgo.MessageCreate) error
+
+var messageHandlers = []MessageHandler{
+	points.HandleMessageCreate,
+	rearrange.HandleMessageCreate,
+	karma.HandleMessageCreate,
+}
 
 func init() {
 	AuthToken = os.Getenv("DISCORD_AUTH_TOKEN")
@@ -80,20 +87,9 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		}
 	}
 
-	if strings.HasPrefix(m.Content, Prefix) {
-		// None yet
-	} else {
-		// Points Manager
-		go points.HandleMessageCreate(s, m)
-
-		// Rearrange
-		go func() {
-			handleError(rearrange.HandleMessageCreate(s, m))
-		}()
-
-		// Karma
-		go func() {
-			handleError(karma.HandleMessageCreate(s, m))
-		}()
+	for _, handler := range messageHandlers {
+		go func(handler MessageHandler) {
+			handleError(handler(s, m))
+		}(handler)
 	}
 }
