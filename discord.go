@@ -6,16 +6,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
-	"twtbot/karma"
-	"twtbot/points"
-	"twtbot/rearrange"
 )
-
-var handlers = []interface{}{
-	points.HandleMessageCreate,
-	rearrange.HandleMessageCreate,
-	karma.HandleMessageCreate,
-}
 
 type DiscordClient struct {
 	AuthToken string
