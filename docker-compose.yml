@@ -9,7 +9,7 @@ services:
     depends_on:
       - mongo
     environment:
-      MONGO_URL: mongodb://mongo:27017
+      MONGO_URI: mongodb://mongo:27017
       MONGO_DATABASE_NAME: twtbot
       DISCORD_AUTH_TOKEN: ${DISCORD_AUTH_TOKEN}
   mongo:

@@ -8,6 +8,7 @@ import (
 var validParentCategories = []string{
 	"597918822296584203",
 	"563929079620042774",
+	"766764321152827392", // Test Area
 }
 
 type Service struct {
@@ -21,13 +22,13 @@ func (r *Service) Rearrange(guildId string, channelId string) error {
 	}
 
 	if r.isValidChannel(channel) {
-		guild, getGuildError := r.session.Guild(guildId)
-		if getGuildError != nil {
-			return getGuildError
+		guildChannels, getChannelsError := r.session.GuildChannels(guildId)
+		if getChannelsError != nil {
+			return getChannelsError
 		}
 
 		var channelsInSameCategory []*discordgo.Channel
-		for _, guildChannel := range guild.Channels {
+		for _, guildChannel := range guildChannels {
 			if guildChannel.ParentID == channel.ParentID && channel.ID != guildChannel.ID {
 				channelsInSameCategory = append(channelsInSameCategory, guildChannel)
 			}
@@ -40,6 +41,7 @@ func (r *Service) Rearrange(guildId string, channelId string) error {
 		for i, ch := range channels {
 			ch.Position = i
 		}
+
 		return r.session.GuildChannelsReorder(guildId, channels)
 	}
 

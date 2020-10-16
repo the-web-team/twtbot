@@ -1,5 +1,7 @@
-FROM golang:latest
+FROM golang:alpine
+
+RUN apk add inotify-tools
 
 WORKDIR /go/src/twtbot
 
-CMD go run .
+CMD inotifywait -r /go/src/twtbot | go run .
