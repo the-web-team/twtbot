@@ -15,9 +15,8 @@ import (
 
 var pointsManager *Manager
 
-func HandleMessageCreate(_ *discordgo.Session, m *discordgo.MessageCreate) error {
+func HandleMessageCreate(_ *discordgo.Session, m *discordgo.MessageCreate) {
 	pointsManager.QueueUser(m.Author.ID)
-	return nil
 }
 
 type Manager struct {

@@ -3,12 +3,13 @@ package karma
 import (
 	"fmt"
 	"github.com/bwmarrin/discordgo"
+	"log"
 	"math/rand"
 	"regexp"
 	"strings"
 )
 
-func HandleMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) error {
+func HandleMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	karmaService := &Service{}
 
 	matches := regexp.MustCompile(`<@!?(\d+)> ((--)|(\+\+))`).FindAllString(m.Content, -1)
@@ -40,19 +41,19 @@ func HandleMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) error
 
 		if len(updates) > 0 {
 			if updateError := karmaService.updateUsersKarma(updates); updateError != nil {
-				return updateError
+				log.Fatal(updateError)
 			}
 
 			karmaRecords, getError := karmaService.getUsersKarma(userIds)
 			if getError != nil {
-				return getError
+				log.Fatal(getError)
 			}
 
 			var replies []string
 			for _, update := range updates {
 				user, userError := s.User(update.UserId)
 				if userError != nil {
-					return userError
+					log.Fatal(userError)
 				}
 
 				newKarma := karmaRecords[update.UserId]
@@ -68,20 +69,18 @@ func HandleMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) error
 			if len(replies) > 0 {
 				_, sendError := s.ChannelMessageSend(m.ChannelID, strings.Join(replies, "\n"))
 				if sendError != nil {
-					return sendError
+					log.Fatal(sendError)
 				}
 			}
 		}
 
 		if triedSelf {
 			if typingError := s.ChannelTyping(m.ChannelID); typingError != nil {
-				return typingError
+				log.Fatal(typingError)
 			}
 			if _, sendError := s.ChannelMessageSend(m.ChannelID, fmt.Sprintf("%s... You cannot give or take karma from yourself!", m.Author.Mention())); sendError != nil {
-				return sendError
+				log.Fatal(sendError)
 			}
 		}
 	}
-
-	return nil
 }

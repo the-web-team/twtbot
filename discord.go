@@ -50,7 +50,9 @@ func (d *DiscordClient) Run() error {
 
 func (d *DiscordClient) AttachHandlers(handlers []interface{}) {
 	for _, handler := range handlers {
-		d.session.AddHandler(d.wrapHandler(handler))
+		wrappedHandler := d.wrapHandler(handler)
+		fmt.Printf("%T\n", wrappedHandler)
+		d.session.AddHandler(wrappedHandler)
 	}
 }
 
