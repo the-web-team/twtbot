@@ -9,37 +9,30 @@ import (
 )
 
 type DiscordClient struct {
-	AuthToken string
-	session   *discordgo.Session
-	handlers  []interface{}
-	services  []func()
+	session  *discordgo.Session
+	handlers []interface{}
+	services []func()
 }
 
-func NewDiscordClient(authToken string) *DiscordClient {
+func NewDiscordClient(authToken string) (*DiscordClient, error) {
 	discordClient := new(DiscordClient)
-	discordClient.AuthToken = authToken
-	return discordClient
+	discord, sessionError := discordgo.New("Bot " + authToken)
+	if sessionError != nil {
+		return nil, sessionError
+	}
+	discordClient.session = discord
+	return discordClient, nil
 }
 
 func (d *DiscordClient) Run() error {
-	discord, sessionError := discordgo.New("Bot " + d.AuthToken)
-	if sessionError != nil {
-		return sessionError
-	}
+	d.session.Identify.Intents = discordgo.MakeIntent(discordgo.IntentsGuildMessages)
 
-	// Add Handlers
-	for _, handler := range d.handlers {
-		discord.AddHandler(d.wrapHandler(handler))
-	}
-
-	discord.Identify.Intents = discordgo.MakeIntent(discordgo.IntentsGuildMessages)
-
-	if openError := discord.Open(); openError != nil {
+	if openError := d.session.Open(); openError != nil {
 		return openError
 	}
 
 	// Set status
-	if statusError := discord.UpdateListeningStatus("you via your Google Home"); statusError != nil {
+	if statusError := d.session.UpdateListeningStatus("you via your Google Home"); statusError != nil {
 		return statusError
 	}
 
@@ -52,11 +45,13 @@ func (d *DiscordClient) Run() error {
 	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt, os.Kill)
 	<-sc
 
-	return discord.Close()
+	return d.session.Close()
 }
 
 func (d *DiscordClient) AttachHandlers(handlers []interface{}) {
-	d.handlers = handlers
+	for _, handler := range handlers {
+		d.session.AddHandler(d.wrapHandler(handler))
+	}
 }
 
 func (d *DiscordClient) AttachServices(services []func()) {

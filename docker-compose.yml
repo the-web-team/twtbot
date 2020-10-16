@@ -1,0 +1,23 @@
+version: "3.7"
+
+services:
+  app:
+    build:
+      context: .
+    volumes:
+      - .:/go/src/twtbot
+    depends_on:
+      - mongo
+    environment:
+      MONGO_URL: mongodb://mongo:27017
+      MONGO_DATABASE_NAME: twtbot
+      DISCORD_AUTH_TOKEN: ${DISCORD_AUTH_TOKEN}
+  mongo:
+    image: mongo:latest
+    ports:
+      - ${MONGO_PORT:-27017}:27017
+    volumes:
+      - mongo-data:/data/db
+
+volumes:
+  mongo-data: {}

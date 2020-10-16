@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"flag"
+	"fmt"
 	"log"
 	"os"
 	"twtbot/karma"
@@ -38,9 +39,16 @@ func init() {
 }
 
 func main() {
-	client := NewDiscordClient(AuthToken)
+	client, clientError := NewDiscordClient(AuthToken)
+	if clientError != nil {
+		log.Fatal(clientError)
+	}
+
+	fmt.Println(messageHandlers)
+
 	client.AttachHandlers(messageHandlers)
 	client.AttachServices(services)
+
 	if runError := client.Run(); runError != nil {
 		log.Fatal(runError)
 	}
