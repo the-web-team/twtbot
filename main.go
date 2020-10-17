@@ -3,7 +3,6 @@ package main
 import (
 	"errors"
 	"flag"
-	"fmt"
 	"log"
 	"os"
 	"twtbot/karma"
@@ -16,13 +15,15 @@ const Prefix = "!b"
 var AuthToken string
 
 var messageHandlers = []interface{}{
-	points.HandleMessageCreate,
+	pointsManager.HandleMessageCreate,
 	rearrange.HandleMessageCreate,
 	karma.HandleMessageCreate,
 }
 
-var services = []func(){
-	points.StartService,
+var pointsManager *points.Manager
+
+var services = []func() error{
+	pointsManager.StartService,
 }
 
 func init() {
@@ -36,6 +37,8 @@ func init() {
 	if AuthToken == "" {
 		log.Fatal(errors.New("no discord auth token supplied"))
 	}
+
+	pointsManager = &points.Manager{}
 }
 
 func main() {
@@ -43,8 +46,6 @@ func main() {
 	if clientError != nil {
 		log.Fatal(clientError)
 	}
-
-	fmt.Println(messageHandlers)
 
 	client.AttachHandlers(messageHandlers)
 	client.AttachServices(services)

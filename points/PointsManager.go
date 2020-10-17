@@ -2,6 +2,7 @@ package points
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/bwmarrin/discordgo"
 	"go.mongodb.org/mongo-driver/bson"
@@ -13,55 +14,60 @@ import (
 	"twtbot/db"
 )
 
-var pointsManager *Manager
-
-func HandleMessageCreate(_ *discordgo.Session, m *discordgo.MessageCreate) {
-	pointsManager.QueueUser(m.Author.ID)
-}
-
 type Manager struct {
-	sync.Mutex
-	queuedPoints []string
+	lock         *sync.Mutex
+	queuedPoints map[string]int32
+	errorChannel chan error
 }
 
-func StartService() {
-	if pointsManager == nil {
-		pointsManager = new(Manager)
-	}
+func (m *Manager) HandleMessageCreate(_ *discordgo.Session, msg *discordgo.MessageCreate) {
+	go m.QueueUser(msg.Author.ID)
 
-	go pointsManager.RunManager()
 }
 
-func (p *Manager) QueueUser(userId string) {
-	p.Lock()
-	defer p.Unlock()
-	p.queuedPoints = append(p.queuedPoints, userId)
+func (m *Manager) QueueUser(userId string) {
+	m.lock.Lock()
+	defer m.lock.Unlock()
+	m.queuedPoints[userId]++
 }
 
-func (p *Manager) RunManager() {
+func (m *Manager) StopService() {
+	m.errorChannel <- errors.New("points service stopped")
+}
+
+func (m *Manager) StartService() error {
+	fmt.Println("Points Manager started.")
 	for range time.Tick(10 * time.Second) {
-		go func() {
-			if awardError := p.AwardPoints(); awardError != nil {
-				log.Fatal(awardError)
-			}
-		}()
+		select {
+		case err := <-m.errorChannel:
+			return err
+		default:
+			go func() {
+				if awardError := m.awardPoints(); awardError != nil {
+					m.errorChannel <- awardError
+				}
+			}()
+		}
 	}
+
+	return nil
 }
 
-func (p *Manager) AwardPoints() error {
-	p.Lock()
-	defer p.Unlock()
-	if len(p.queuedPoints) > 0 {
+func (m *Manager) awardPoints() error {
+	m.lock.Lock()
+	defer m.lock.Unlock()
+
+	if len(m.queuedPoints) > 0 {
 		var operations []mongo.WriteModel
 		bulkOptions := options.BulkWrite()
 
-		for _, userId := range p.queuedPoints {
+		for userId, points := range m.queuedPoints {
 			operation := mongo.NewUpdateOneModel()
 			operation.SetUpsert(true)
 
 			filter := bson.D{{"userId", userId}}
 			update := bson.D{
-				{"$inc", bson.D{{"points", 1}}},
+				{"$inc", bson.D{{"points", points}}},
 			}
 			operation.SetFilter(filter)
 			operation.SetUpdate(update)
@@ -77,7 +83,8 @@ func (p *Manager) AwardPoints() error {
 				return bulkWriteError
 			}
 		}
-		p.queuedPoints = nil
+
+		m.queuedPoints = nil
 	}
 
 	return nil

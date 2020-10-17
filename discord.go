@@ -9,9 +9,10 @@ import (
 )
 
 type DiscordClient struct {
-	session  *discordgo.Session
-	handlers []interface{}
-	services []func()
+	session      *discordgo.Session
+	handlers     []interface{}
+	services     []func() error
+	errorChannel chan error
 }
 
 func NewDiscordClient(authToken string) (*DiscordClient, error) {
@@ -36,9 +37,7 @@ func (d *DiscordClient) Run() error {
 		return statusError
 	}
 
-	for _, service := range d.services {
-		go service()
-	}
+	go d.launchServices()
 
 	fmt.Println("Discord Bot is running...")
 	sc := make(chan os.Signal, 1)
@@ -51,13 +50,22 @@ func (d *DiscordClient) Run() error {
 func (d *DiscordClient) AttachHandlers(handlers []interface{}) {
 	for _, handler := range handlers {
 		wrappedHandler := d.wrapHandler(handler)
-		fmt.Printf("%T\n", wrappedHandler)
 		d.session.AddHandler(wrappedHandler)
 	}
 }
 
-func (d *DiscordClient) AttachServices(services []func()) {
+func (d *DiscordClient) AttachServices(services []func() error) {
 	d.services = services
+}
+
+func (d *DiscordClient) launchServices() {
+	for _, service := range d.services {
+		go func(service func() error) {
+			if serviceError := service(); serviceError != nil {
+				d.errorChannel <- serviceError
+			}
+		}(service)
+	}
 }
 
 func (d *DiscordClient) wrapHandler(handler interface{}) interface{} {
