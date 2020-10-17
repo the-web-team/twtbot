@@ -70,10 +70,6 @@ func (h *MessageHandler) SetMessage(m *discordgo.MessageCreate) {
 	h.Message = m
 }
 
-type HandlerProvider interface {
-	GetHandler() *MessageHandler
-}
-
 func CreateMessageHandler(h MessageHandlerInterface) func(s *discordgo.Session, m *discordgo.MessageCreate) {
 	return func(s *discordgo.Session, m *discordgo.MessageCreate) {
 		h.SetSession(s)
