@@ -2,36 +2,11 @@ package karma
 
 import (
 	"context"
-	"github.com/bwmarrin/discordgo"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"twtbot/db"
 )
-
-var compliments = []string{
-	"you are a gift to those around you!",
-	"is awesome!",
-	"is a smart cookie!",
-	"has got swag!",
-	"you are appreciated!",
-	"is string!",
-	"is inspiring!",
-	"on a scale from 1 to 10, you're an 11!",
-	"is a ray of sunshine!",
-	"is making a difference!",
-	"brings out the best in us!",
-	"thank you!",
-}
-
-var negativeComments = []string{
-	"my middle finger salutes you!",
-	"is disappointing!",
-	"rip...",
-	"nope...",
-	"fail!",
-	"gtfo!",
-}
 
 type Model struct {
 	UserId string `bson:"userId"`
@@ -43,11 +18,9 @@ type Operation struct {
 	KarmaDelta int32
 }
 
-type Service struct {
-	session *discordgo.Session
-}
+type Service struct{}
 
-func (s *Service) getUsersKarma(userIds []string) (map[string]int32, error) {
+func (s *Service) GetUsersKarma(userIds []string) (map[string]int32, error) {
 	filter := bson.D{{"userId", bson.D{{"$in", userIds}}}}
 
 	collection := s.getCollection()
@@ -72,7 +45,7 @@ func (s *Service) getUsersKarma(userIds []string) (map[string]int32, error) {
 	return karmaRecords, nil
 }
 
-func (s *Service) updateUsersKarma(karmaOperations []Operation) error {
+func (s *Service) UpdateUsersKarma(karmaOperations []Operation) error {
 	var operations []mongo.WriteModel
 	bulkOptions := options.BulkWrite()
 

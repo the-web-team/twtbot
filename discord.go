@@ -5,13 +5,15 @@ import (
 	"github.com/bwmarrin/discordgo"
 	"os"
 	"os/signal"
+	"sync"
 	"syscall"
+	"twtbot/interfaces"
 )
 
 type DiscordClient struct {
 	session      *discordgo.Session
 	handlers     []interface{}
-	services     []func() error
+	services     []interfaces.BotService
 	errorChannel chan error
 }
 
@@ -44,28 +46,43 @@ func (d *DiscordClient) Run() error {
 	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt, os.Kill)
 	<-sc
 
+	// Shutdown Services
+	d.shutdownServicesHandler()
+
 	return d.session.Close()
 }
 
-func (d *DiscordClient) AttachHandlers(handlers []interface{}) {
-	for _, handler := range handlers {
-		wrappedHandler := d.wrapHandler(handler)
-		d.session.AddHandler(wrappedHandler)
-	}
+func (d *DiscordClient) AttachMessageCreateHandler(handler interfaces.MessageHandlerInterface) {
+	d.session.AddHandler(interfaces.CreateMessageHandler(handler))
 }
 
-func (d *DiscordClient) AttachServices(services []func() error) {
-	d.services = services
+func (d *DiscordClient) AttachService(service interfaces.BotService) interfaces.BotService {
+	d.services = append(d.services, service)
+	return service
 }
 
 func (d *DiscordClient) launchServices() {
 	for _, service := range d.services {
-		go func(service func() error) {
-			if serviceError := service(); serviceError != nil {
-				d.errorChannel <- serviceError
+		go func(service interfaces.BotService) {
+			if startError := service.StartService(); startError != nil {
+				d.errorChannel <- startError
 			}
 		}(service)
 	}
+}
+
+func (d *DiscordClient) shutdownServicesHandler() {
+	var wg sync.WaitGroup
+
+	for _, service := range d.services {
+		wg.Add(1)
+		go func(service interfaces.BotService) {
+			service.StopService()
+			wg.Done()
+		}(service)
+	}
+
+	wg.Wait()
 }
 
 func (d *DiscordClient) wrapHandler(handler interface{}) interface{} {

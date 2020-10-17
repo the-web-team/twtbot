@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/bwmarrin/discordgo"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -15,27 +14,31 @@ import (
 )
 
 type Manager struct {
-	lock         *sync.Mutex
+	sync.Mutex
 	queuedPoints map[string]int32
 	errorChannel chan error
 }
 
-func (m *Manager) HandleMessageCreate(_ *discordgo.Session, msg *discordgo.MessageCreate) {
-	go m.QueueUser(msg.Author.ID)
-
-}
-
 func (m *Manager) QueueUser(userId string) {
-	m.lock.Lock()
-	defer m.lock.Unlock()
+	m.Lock()
+	defer m.Unlock()
+	if m.queuedPoints == nil {
+		m.queuedPoints = make(map[string]int32)
+	}
 	m.queuedPoints[userId]++
 }
 
 func (m *Manager) StopService() {
+	if awardError := m.awardPoints(); awardError != nil {
+		log.Println(awardError)
+	}
 	m.errorChannel <- errors.New("points service stopped")
 }
 
 func (m *Manager) StartService() error {
+	errorChannel := make(chan error)
+	m.errorChannel = errorChannel
+
 	fmt.Println("Points Manager started.")
 	for range time.Tick(10 * time.Second) {
 		select {
@@ -53,9 +56,13 @@ func (m *Manager) StartService() error {
 	return nil
 }
 
+func (m *Manager) GetUserPoints(userId string) int32 {
+	return 0
+}
+
 func (m *Manager) awardPoints() error {
-	m.lock.Lock()
-	defer m.lock.Unlock()
+	m.Lock()
+	defer m.Unlock()
 
 	if len(m.queuedPoints) > 0 {
 		var operations []mongo.WriteModel
@@ -88,4 +95,8 @@ func (m *Manager) awardPoints() error {
 	}
 
 	return nil
+}
+
+func (m *Manager) reply(message string) {
+
 }

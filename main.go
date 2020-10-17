@@ -5,26 +5,11 @@ import (
 	"flag"
 	"log"
 	"os"
-	"twtbot/karma"
+	"twtbot/message_handlers"
 	"twtbot/points"
-	"twtbot/rearrange"
 )
 
-const Prefix = "!b"
-
 var AuthToken string
-
-var messageHandlers = []interface{}{
-	pointsManager.HandleMessageCreate,
-	rearrange.HandleMessageCreate,
-	karma.HandleMessageCreate,
-}
-
-var pointsManager *points.Manager
-
-var services = []func() error{
-	pointsManager.StartService,
-}
 
 func init() {
 	AuthToken = os.Getenv("DISCORD_AUTH_TOKEN")
@@ -37,8 +22,6 @@ func init() {
 	if AuthToken == "" {
 		log.Fatal(errors.New("no discord auth token supplied"))
 	}
-
-	pointsManager = &points.Manager{}
 }
 
 func main() {
@@ -47,8 +30,18 @@ func main() {
 		log.Fatal(clientError)
 	}
 
-	client.AttachHandlers(messageHandlers)
-	client.AttachServices(services)
+	// Run Services
+	pointsManager := client.AttachService(new(points.Manager)).(*points.Manager)
+
+	// Handlers
+	client.AttachMessageCreateHandler(&message_handlers.GivePointsHandler{
+		PointsManager: pointsManager,
+	})
+	client.AttachMessageCreateHandler(&message_handlers.GetUserPointsHandler{
+		PointsManager: pointsManager,
+	})
+	client.AttachMessageCreateHandler(&message_handlers.RearrangerHandler{})
+	client.AttachMessageCreateHandler(&message_handlers.KarmaHandler{})
 
 	if runError := client.Run(); runError != nil {
 		log.Fatal(runError)
