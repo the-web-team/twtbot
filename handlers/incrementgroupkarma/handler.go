@@ -37,11 +37,18 @@ func (h *Handler) Run() error {
 	roleIds := roleIdSet.GetItems()
 
 	var wg sync.WaitGroup
+	var lock sync.Mutex
 	userUpdates := make(map[string]int32)
 	rewardUser := func(member *discordgo.Member, num int32) {
 		for _, roleId := range member.Roles {
 			if _, ok := roleIds[roleId]; ok && member.User.ID != h.Message.Author.ID {
-				userUpdates[member.User.ID] = num
+				lock.Lock()
+				if _, ok := userUpdates[member.User.ID]; ok {
+					userUpdates[member.User.ID] += num
+				} else {
+					userUpdates[member.User.ID] = num
+				}
+				lock.Unlock()
 			}
 		}
 		wg.Done()
