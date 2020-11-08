@@ -105,7 +105,7 @@ func (m *Manager) awardPoints() error {
 		stringRewardees := strings.Join(rewardees, ", ")
 		log.Println(fmt.Sprintf("Awarding points to %d users. %s", numOperations, stringRewardees))
 
-		if len(operations) > 0 {
+		if numOperations > 0 {
 			_, database := db.Connect()
 			collection := database.Collection("points")
 			if _, bulkWriteError := collection.BulkWrite(context.TODO(), operations, bulkOptions); bulkWriteError != nil {

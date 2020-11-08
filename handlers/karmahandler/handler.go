@@ -23,7 +23,7 @@ func (h *Handler) Run() error {
 	karmaService := new(karma.Service)
 
 	var userIds []string
-	var updates []karma.Operation
+	userUpdates := make(map[string]int32)
 
 	triedSelf := false
 	for _, match := range h.matches {
@@ -34,21 +34,18 @@ func (h *Handler) Run() error {
 			continue
 		}
 		userIds = append(userIds, userId)
+		if _, ok := userUpdates[userId]; !ok {
+			userUpdates[userId] = 0
+		}
 		if strings.HasSuffix(match, "++") {
-			updates = append(updates, karma.Operation{
-				UserId:     userId,
-				KarmaDelta: 1,
-			})
+			userUpdates[userId]++
 		} else if strings.HasSuffix(match, "--") {
-			updates = append(updates, karma.Operation{
-				UserId:     userId,
-				KarmaDelta: -1,
-			})
+			userUpdates[userId]--
 		}
 	}
 
-	if len(updates) > 0 {
-		if updateError := karmaService.UpdateUsersKarma(updates); updateError != nil {
+	if len(userUpdates) > 0 {
+		if updateError := karmaService.UpdateUsersKarma(userUpdates); updateError != nil {
 			return updateError
 		}
 
@@ -58,18 +55,18 @@ func (h *Handler) Run() error {
 		}
 
 		var replies []string
-		for _, update := range updates {
-			user, userError := h.Session.User(update.UserId)
+		for userId, newKarma := range karmaRecords {
+			karmaDelta := userUpdates[userId]
+			user, userError := h.Session.User(userId)
 			if userError != nil {
 				return userError
 			}
 
-			newKarma := karmaRecords[update.UserId]
-			if update.KarmaDelta == 1 {
+			if karmaDelta > 0 {
 				compliment := compliments[rand.Intn(len(compliments))]
 				message := fmt.Sprintf("%s %s (Karma: %d)", user.Mention(), compliment, newKarma)
 				replies = append(replies, message)
-			} else if update.KarmaDelta == -1 {
+			} else if karmaDelta < 0 {
 				negativeComment := negativeComments[rand.Intn(len(negativeComments))]
 				message := fmt.Sprintf("%s %s (Karma: %d)", user.Mention(), negativeComment, newKarma)
 				replies = append(replies, message)
