@@ -1,18 +1,18 @@
-package message_handlers
+package givepointshandler
 
 import (
 	"errors"
 	"log"
 	"twtbot/interfaces"
-	"twtbot/points"
+	"twtbot/services/points"
 )
 
-type GivePointsHandler struct {
+type Handler struct {
 	interfaces.MessageHandler
 	PointsManager *points.Manager
 }
 
-func (h *GivePointsHandler) ShouldRun() bool {
+func (h *Handler) ShouldRun() bool {
 	if h.PointsManager == nil {
 		log.Println("PointsManager is nil")
 		return false
@@ -21,7 +21,7 @@ func (h *GivePointsHandler) ShouldRun() bool {
 	return true
 }
 
-func (h *GivePointsHandler) Run() error {
+func (h *Handler) Run() error {
 	if h.PointsManager == nil {
 		return errors.New("pointsmanager must not be nil")
 	}

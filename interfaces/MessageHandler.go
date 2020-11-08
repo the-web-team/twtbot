@@ -3,7 +3,6 @@ package interfaces
 import (
 	"fmt"
 	"github.com/bwmarrin/discordgo"
-	"log"
 )
 
 type MessageHandler struct {
@@ -68,17 +67,4 @@ func (h *MessageHandler) SetSession(s *discordgo.Session) {
 
 func (h *MessageHandler) SetMessage(m *discordgo.MessageCreate) {
 	h.Message = m
-}
-
-func CreateMessageHandler(h MessageHandlerInterface) func(s *discordgo.Session, m *discordgo.MessageCreate) {
-	return func(s *discordgo.Session, m *discordgo.MessageCreate) {
-		h.SetSession(s)
-		h.SetMessage(m)
-		if m.Author.ID == s.State.User.ID || !h.ShouldRun() {
-			return
-		}
-		if runError := h.Run(); runError != nil {
-			log.Println(runError)
-		}
-	}
 }

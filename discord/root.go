@@ -1,4 +1,4 @@
-package main
+package discord
 
 import (
 	"fmt"
@@ -11,15 +11,15 @@ import (
 	"twtbot/interfaces"
 )
 
-type DiscordClient struct {
+type Client struct {
 	session      *discordgo.Session
 	handlers     []interface{}
 	services     []interfaces.BotService
 	errorChannel chan error
 }
 
-func NewDiscordClient(authToken string) (*DiscordClient, error) {
-	discordClient := new(DiscordClient)
+func NewDiscordClient(authToken string) (*Client, error) {
+	discordClient := new(Client)
 	discord, sessionError := discordgo.New("Bot " + authToken)
 	if sessionError != nil {
 		return nil, sessionError
@@ -28,7 +28,7 @@ func NewDiscordClient(authToken string) (*DiscordClient, error) {
 	return discordClient, nil
 }
 
-func (d *DiscordClient) Run() error {
+func (d *Client) Run() error {
 	d.session.Identify.Intents = discordgo.MakeIntent(discordgo.IntentsGuildMessages)
 
 	if openError := d.session.Open(); openError != nil {
@@ -53,24 +53,30 @@ func (d *DiscordClient) Run() error {
 	return d.session.Close()
 }
 
-func (d *DiscordClient) AttachMessageCreateHandler(handler interfaces.MessageHandlerInterface) {
-	d.session.AddHandler(interfaces.CreateMessageHandler(handler))
-}
-
-func (d *DiscordClient) AttachHandler(handler interface{}) {
-	if messageHandler, ok := handler.(interfaces.MessageHandlerInterface); ok {
-		d.session.AddHandler(interfaces.CreateMessageHandler(messageHandler))
+func (d *Client) AttachHandler(handler interface{}) {
+	if messageHandler, ok := handler.(func() interfaces.MessageHandlerInterface); ok {
+		wrappedHandler := func(s *discordgo.Session, m *discordgo.MessageCreate) {
+			h := messageHandler()
+			h.SetSession(s)
+			h.SetMessage(m)
+			if m.Author.ID == s.State.User.ID || !h.ShouldRun() {
+				return
+			}
+			if runError := h.Run(); runError != nil {
+				log.Println(runError)
+			}
+		}
+		d.session.AddHandler(wrappedHandler)
 	} else {
 		log.Println("Invalid handler type")
 	}
 }
 
-func (d *DiscordClient) AttachService(service interfaces.BotService) interfaces.BotService {
+func (d *Client) AttachService(service interfaces.BotService) {
 	d.services = append(d.services, service)
-	return service
 }
 
-func (d *DiscordClient) launchServices() {
+func (d *Client) launchServices() {
 	for _, service := range d.services {
 		go func(service interfaces.BotService) {
 			if startError := service.StartService(); startError != nil {
@@ -80,7 +86,7 @@ func (d *DiscordClient) launchServices() {
 	}
 }
 
-func (d *DiscordClient) shutdownServicesHandler() {
+func (d *Client) shutdownServicesHandler() {
 	var wg sync.WaitGroup
 
 	for _, service := range d.services {
@@ -94,7 +100,7 @@ func (d *DiscordClient) shutdownServicesHandler() {
 	wg.Wait()
 }
 
-func (d *DiscordClient) wrapHandler(handler interface{}) interface{} {
+func (d *Client) wrapHandler(handler interface{}) interface{} {
 	switch v := handler.(type) {
 	case func(*discordgo.Session, *discordgo.MessageCreate):
 		return func(s *discordgo.Session, m *discordgo.MessageCreate) {
@@ -107,3 +113,5 @@ func (d *DiscordClient) wrapHandler(handler interface{}) interface{} {
 
 	return handler
 }
+
+type MessageHandlerFactory func(session *discordgo.Session, message *discordgo.Message) interface{}

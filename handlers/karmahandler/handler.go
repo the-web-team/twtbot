@@ -1,4 +1,4 @@
-package message_handlers
+package karmahandler
 
 import (
 	"fmt"
@@ -6,28 +6,27 @@ import (
 	"regexp"
 	"strings"
 	"twtbot/interfaces"
-	"twtbot/karma"
+	"twtbot/services/karma"
 )
 
-type KarmaHandler struct {
+type Handler struct {
 	interfaces.MessageHandler
+	matches []string
 }
 
-func (h *KarmaHandler) ShouldRun() bool {
-	matches := regexp.MustCompile(`<@!?(\d+)> ((--)|(\+\+))`).FindAllString(h.Message.Content, -1)
-	return len(matches) > 0
+func (h *Handler) ShouldRun() bool {
+	h.matches = regexp.MustCompile(`<@!?(\d+)> ((--)|(\+\+))`).FindAllString(h.Message.Content, -1)
+	return len(h.matches) > 0
 }
 
-func (h *KarmaHandler) Run() error {
+func (h *Handler) Run() error {
 	karmaService := new(karma.Service)
 
 	var userIds []string
 	var updates []karma.Operation
 
-	matches := regexp.MustCompile(`<@!?(\d+)> ((--)|(\+\+))`).FindAllString(h.Message.Content, -1)
-
 	triedSelf := false
-	for _, match := range matches {
+	for _, match := range h.matches {
 		userId := regexp.MustCompile(`\d+`).FindString(match)
 		if userId == h.Message.Author.ID {
 			// Cannot give/remove karma to yourself

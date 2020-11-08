@@ -1,16 +1,24 @@
-package message_handlers
+package rearrangerhandler
 
 import (
+	"github.com/bwmarrin/discordgo"
 	"log"
 	"twtbot/interfaces"
-	"twtbot/rearrange"
+	"twtbot/services/rearrange"
 )
 
-type RearrangerHandler struct {
+type Handler struct {
 	interfaces.MessageHandler
 }
 
-func (h *RearrangerHandler) ShouldRun() bool {
+func New(session *discordgo.Session, message *discordgo.MessageCreate) *Handler {
+	handler := &Handler{}
+	handler.SetSession(session)
+	handler.SetMessage(message)
+	return handler
+}
+
+func (h *Handler) ShouldRun() bool {
 	channel, getChannelError := h.Session.Channel(h.Message.ChannelID)
 	if getChannelError != nil {
 		log.Println(getChannelError)
@@ -25,7 +33,7 @@ func (h *RearrangerHandler) ShouldRun() bool {
 	return false
 }
 
-func (h *RearrangerHandler) Run() error {
+func (h *Handler) Run() error {
 	r := rearrange.Service{Session: h.Session}
 	return r.Rearrange(h.Message.GuildID, h.Message.ChannelID)
 }

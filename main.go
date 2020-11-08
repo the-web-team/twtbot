@@ -5,8 +5,13 @@ import (
 	"flag"
 	"log"
 	"os"
-	"twtbot/message_handlers"
-	"twtbot/points"
+	"twtbot/discord"
+	"twtbot/handlers/getuserpointshandler"
+	"twtbot/handlers/givepointshandler"
+	"twtbot/handlers/karmahandler"
+	"twtbot/handlers/rearrangerhandler"
+	"twtbot/interfaces"
+	"twtbot/services/points"
 )
 
 var AuthToken string
@@ -25,23 +30,32 @@ func init() {
 }
 
 func main() {
-	client, clientError := NewDiscordClient(AuthToken)
+	client, clientError := discord.NewDiscordClient(AuthToken)
 	if clientError != nil {
 		log.Fatal(clientError)
 	}
 
 	// Run Services
-	pointsManager := client.AttachService(new(points.Manager)).(*points.Manager)
+	pointsManager := &points.Manager{}
+	client.AttachService(pointsManager)
 
 	// Handlers
-	client.AttachMessageCreateHandler(&message_handlers.GivePointsHandler{
-		PointsManager: pointsManager,
+	client.AttachHandler(func() interfaces.MessageHandlerInterface {
+		return &givepointshandler.Handler{
+			PointsManager: pointsManager,
+		}
 	})
-	client.AttachMessageCreateHandler(&message_handlers.GetUserPointsHandler{
-		PointsManager: pointsManager,
+	client.AttachHandler(func() interfaces.MessageHandlerInterface {
+		return &getuserpointshandler.Handler{
+			PointsManager: pointsManager,
+		}
 	})
-	client.AttachMessageCreateHandler(&message_handlers.RearrangerHandler{})
-	client.AttachMessageCreateHandler(&message_handlers.KarmaHandler{})
+	client.AttachHandler(func() interfaces.MessageHandlerInterface {
+		return &rearrangerhandler.Handler{}
+	})
+	client.AttachHandler(func() interfaces.MessageHandlerInterface {
+		return &karmahandler.Handler{}
+	})
 
 	if runError := client.Run(); runError != nil {
 		log.Fatal(runError)
