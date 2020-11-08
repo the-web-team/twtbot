@@ -1,4 +1,4 @@
-package getuserpointshandler
+package getuserpoints
 
 import (
 	"fmt"

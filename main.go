@@ -6,9 +6,10 @@ import (
 	"log"
 	"os"
 	"twtbot/discord"
-	"twtbot/handlers/getuserpointshandler"
-	"twtbot/handlers/givepointshandler"
-	"twtbot/handlers/karmahandler"
+	"twtbot/handlers/getuserpoints"
+	"twtbot/handlers/givepoints"
+	"twtbot/handlers/incrementgroupkarma"
+	"twtbot/handlers/incrementuserkarma"
 	"twtbot/handlers/rearrangerhandler"
 	"twtbot/interfaces"
 	"twtbot/services/points"
@@ -41,12 +42,12 @@ func main() {
 
 	// Handlers
 	client.AttachHandler(func() interfaces.MessageHandlerInterface {
-		return &givepointshandler.Handler{
+		return &givepoints.Handler{
 			PointsManager: pointsManager,
 		}
 	})
 	client.AttachHandler(func() interfaces.MessageHandlerInterface {
-		return &getuserpointshandler.Handler{
+		return &getuserpoints.Handler{
 			PointsManager: pointsManager,
 		}
 	})
@@ -54,7 +55,10 @@ func main() {
 		return &rearrangerhandler.Handler{}
 	})
 	client.AttachHandler(func() interfaces.MessageHandlerInterface {
-		return &karmahandler.Handler{}
+		return &incrementuserkarma.Handler{}
+	})
+	client.AttachHandler(func() interfaces.MessageHandlerInterface {
+		return &incrementgroupkarma.Handler{}
 	})
 
 	if runError := client.Run(); runError != nil {

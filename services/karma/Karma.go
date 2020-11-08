@@ -75,13 +75,10 @@ func (s *Service) UpdateUsersKarma(karmaOperations map[string]int32) error {
 			userIdString := userId.(string)
 			operation := mongo.NewUpdateManyModel()
 			operation.SetUpsert(true)
-
-			filter := bson.D{{"userId", userIdString}}
-			update := bson.D{
+			operation.SetFilter(bson.D{{"userId", userIdString}})
+			operation.SetUpdate(bson.D{
 				{"$inc", bson.D{{"karma", karmaOperations[userIdString]}}},
-			}
-			operation.SetFilter(filter)
-			operation.SetUpdate(update)
+			})
 			operations = append(operations, operation)
 		}
 

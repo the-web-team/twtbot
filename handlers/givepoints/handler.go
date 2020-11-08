@@ -1,4 +1,4 @@
-package givepointshandler
+package givepoints
 
 import (
 	"errors"
