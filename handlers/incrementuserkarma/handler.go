@@ -15,7 +15,6 @@ type Handler struct {
 }
 
 func (h *Handler) ShouldRun() bool {
-	fmt.Println(h.Message.Content)
 	h.matches = regexp.MustCompile(`<@!?(\d+)> ((--)|(\+\+))`).FindAllString(h.Message.Content, -1)
 	return len(h.matches) > 0
 }
