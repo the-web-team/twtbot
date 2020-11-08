@@ -8,6 +8,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"log"
+	"strings"
 	"sync"
 	"time"
 	"twtbot/db"
@@ -17,6 +18,11 @@ type Manager struct {
 	sync.Mutex
 	queuedPoints map[string]int32
 	errorChannel chan error
+}
+
+type Model struct {
+	userId string
+	points int32
 }
 
 func (m *Manager) QueueUser(userId string) {
@@ -57,7 +63,18 @@ func (m *Manager) StartService() error {
 }
 
 func (m *Manager) GetUserPoints(userId string) int32 {
-	return 0
+	_, database := db.Connect()
+	collection := database.Collection("points")
+
+	filter := bson.D{{"userId", userId}}
+
+	var result Model
+	findError := collection.FindOne(context.TODO(), filter).Decode(&result)
+	if findError != nil {
+		return 0
+	}
+
+	return result.points
 }
 
 func (m *Manager) awardPoints() error {
@@ -67,6 +84,8 @@ func (m *Manager) awardPoints() error {
 	if len(m.queuedPoints) > 0 {
 		var operations []mongo.WriteModel
 		bulkOptions := options.BulkWrite()
+
+		var rewardees []string
 
 		for userId, points := range m.queuedPoints {
 			operation := mongo.NewUpdateOneModel()
@@ -79,9 +98,12 @@ func (m *Manager) awardPoints() error {
 			operation.SetFilter(filter)
 			operation.SetUpdate(update)
 			operations = append(operations, operation)
+			rewardees = append(rewardees, userId)
 		}
 
-		log.Println(fmt.Sprintf("Awarding points to %d users.", len(operations)))
+		numOperations := len(operations)
+		stringRewardees := strings.Join(rewardees, ", ")
+		log.Println(fmt.Sprintf("Awarding points to %d users. %s", numOperations, stringRewardees))
 
 		if len(operations) > 0 {
 			_, database := db.Connect()

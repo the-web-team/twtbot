@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/bwmarrin/discordgo"
+	"log"
 	"os"
 	"os/signal"
 	"sync"
@@ -54,6 +55,14 @@ func (d *DiscordClient) Run() error {
 
 func (d *DiscordClient) AttachMessageCreateHandler(handler interfaces.MessageHandlerInterface) {
 	d.session.AddHandler(interfaces.CreateMessageHandler(handler))
+}
+
+func (d *DiscordClient) AttachHandler(handler interface{}) {
+	if messageHandler, ok := handler.(interfaces.MessageHandlerInterface); ok {
+		d.session.AddHandler(interfaces.CreateMessageHandler(messageHandler))
+	} else {
+		log.Println("Invalid handler type")
+	}
 }
 
 func (d *DiscordClient) AttachService(service interfaces.BotService) interfaces.BotService {
