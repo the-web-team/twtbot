@@ -68,9 +68,9 @@ workflows:
   build:
     jobs:
       - build-image:
-          context: digitalocean-production
+          context: digitalocean
       - deploy-production:
-          context: digitalocean-production
+          context: digitalocean
           requires:
             - build-image
           filters:
