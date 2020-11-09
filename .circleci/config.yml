@@ -17,7 +17,8 @@ jobs:
     <<: *machine_defaults
     steps:
       - checkout
-      - doctl/install_and_initialize_cli:
+      - doctl/install
+      - doctl/initialize:
           digitalocean-access-token: DO_ACCESS_TOKEN
       - run:
           name: Build and Push Docker Image
@@ -67,9 +68,9 @@ workflows:
   build:
     jobs:
       - build-image:
-          context: digitalocean
+          context: digitalocean-production
       - deploy-production:
-          context: digitalocean
+          context: digitalocean-production
           requires:
             - build-image
           filters:
