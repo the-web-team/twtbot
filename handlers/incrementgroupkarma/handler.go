@@ -138,7 +138,7 @@ var compliments = []string{
 	"is a smart cookie!",
 	"has got swag!",
 	"you are appreciated!",
-	"is string!",
+	"is strong!",
 	"is inspiring!",
 	"on a scale from 1 to 10, you're an 11!",
 	"is a ray of sunshine!",
