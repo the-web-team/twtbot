@@ -30,6 +30,9 @@ jobs:
     <<: *docker_defaults
     steps:
       - checkout
+      - doctl/install
+      - doctl/initialize:
+          digitalocean-access-token: DO_ACCESS_TOKEN
       - kube-orb/install-kubectl
       - kube-orb/install-kubeconfig:
           kubeconfig: KUBE_CONFIG
