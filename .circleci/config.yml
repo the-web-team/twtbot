@@ -24,7 +24,7 @@ jobs:
           name: Build and Push Docker Image
           command: |
             doctl registry login
-            docker build -f .deployment/Dockerfile -t registry.digitalocean.com/twt-registry/twtbot:${CIRCLE_SHA1}
+            docker build -f .deployment/Dockerfile -t registry.digitalocean.com/twt-registry/twtbot:${CIRCLE_SHA1} .
             docker push registry.digitalocean.com/twt-registry/twtbot:${CIRCLE_SHA1}
   deploy: &deploy
     <<: *docker_defaults
