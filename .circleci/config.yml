@@ -9,19 +9,22 @@ machine_defaults: &machine_defaults
     docker_layer_caching: true
 
 orbs:
-  kube-orb: circleci/kubernetes@0.11.1
+  kube-orb: circleci/kubernetes@0.11.2
+  doctl: digitalocean/cli@0.1.1
 
 jobs:
   build-image:
     <<: *machine_defaults
     steps:
       - checkout
+      - doctl/install_and_initialize_cli:
+          digitalocean-access-token: DO_ACCESS_TOKEN
       - run:
           name: Build and Push Docker Image
           command: |
-            docker login -u ${DOCKER_USERNAME} -p ${DOCKER_PASSWORD} ${DOCKER_REGISTRY_URL}
-            docker build -f .deployment/Dockerfile -t ${DOCKER_REGISTRY_URL}/${DOCKER_USERNAME}/twtbot/bot:${CIRCLE_SHA1} .
-            docker push ${DOCKER_REGISTRY_URL}/${DOCKER_USERNAME}/twtbot/bot:${CIRCLE_SHA1}
+            doctl registry login
+            docker build -f .deployment/Dockerfile -t registry.digitalocean.com/twt-registry/twtbot:${CIRCLE_SHA1}
+            docker push registry.digitalocean.com/twt-registry/twtbot:${CIRCLE_SHA1}
   deploy: &deploy
     <<: *docker_defaults
     steps:
@@ -64,9 +67,9 @@ workflows:
   build:
     jobs:
       - build-image:
-          context: docker-github-vinlock
+          context: digitalocean
       - deploy-production:
-          context: k8s.dak.dev-prod
+          context: digitalocean
           requires:
             - build-image
           filters:

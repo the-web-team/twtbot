@@ -23,10 +23,10 @@ spec:
         options:
           - name: single-request
       imagePullSecrets:
-        - name: docker-github-vinlock
+        - name: twt-registry
       containers:
         - name: server
-          image: {{DOCKER_REGISTRY_URL}}/vinlock/twtbot/bot:{{CIRCLE_SHA1}}
+          image: registry.digitalocean.com/twt-registry/twtbot:{{CIRCLE_SHA1}}
           imagePullPolicy: Always
           envFrom:
             - secretRef:
