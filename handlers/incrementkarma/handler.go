@@ -22,8 +22,7 @@ type Handler struct {
 func (h *Handler) ShouldRun() bool {
 	h.userMatches = h.getMentionedUsers()
 	h.roleMatches = h.getMentionedRoles()
-	h.matches = regexp.MustCompile(`<@&(\d+)> ((--)|(\+\+))`).FindAllString(h.Message.Content, -1)
-	return len(h.matches) > 0
+	return len(h.userMatches) > 0 || len(h.roleMatches) > 0
 }
 
 func (h *Handler) Run() error {
@@ -34,22 +33,25 @@ func (h *Handler) Run() error {
 	karmaService := new(karma.Service)
 	triedSelf := false
 	deltas := make(map[string]int32)
+	hasUserMatches := len(h.userMatches) > 0
+	hasRoleMatches := len(h.roleMatches) > 0
 
-	if len(h.userMatches) > 0 {
-		var userDeltas map[string]int32
-		userDeltas, triedSelf = h.getUserKarmaDeltas(h.userMatches)
-		for userId, delta := range userDeltas {
-			deltas[userId] += delta
-		}
+	if hasUserMatches {
+		deltas, triedSelf = h.getUserKarmaDeltas(h.userMatches)
 	}
 
-	if len(h.roleMatches) > 0 {
+	if hasRoleMatches {
 		userRoleDeltas, userRoleDeltaError := h.getRoleKarmaDeltas(h.roleMatches)
 		if userRoleDeltaError != nil {
 			return userRoleDeltaError
 		}
-		for userId, delta := range userRoleDeltas {
-			deltas[userId] += delta
+
+		if hasUserMatches {
+			for userId, delta := range userRoleDeltas {
+				deltas[userId] += delta
+			}
+		} else {
+			deltas = userRoleDeltas
 		}
 	}
 
@@ -124,9 +126,6 @@ func (h *Handler) getUserKarmaDeltas(matches []string) (deltas map[string]int32,
 		if userId == h.Message.Author.ID {
 			triedSelf = true
 			continue
-		}
-		if _, ok := deltas[userId]; !ok {
-			deltas[userId] = 0
 		}
 		if strings.HasSuffix(match, "++") {
 			deltas[userId]++
