@@ -14,7 +14,7 @@ import (
 	"twtbot/db"
 )
 
-type Manager struct {
+type Service struct {
 	sync.Mutex
 	queuedPoints map[string]int32
 	errorChannel chan error
@@ -25,7 +25,7 @@ type Model struct {
 	points int32
 }
 
-func (m *Manager) QueueUser(userId string) {
+func (m *Service) QueueUser(userId string) {
 	m.Lock()
 	defer m.Unlock()
 	if m.queuedPoints == nil {
@@ -34,18 +34,18 @@ func (m *Manager) QueueUser(userId string) {
 	m.queuedPoints[userId]++
 }
 
-func (m *Manager) StopService() {
+func (m *Service) StopService() {
 	if awardError := m.awardPoints(); awardError != nil {
 		log.Println(awardError)
 	}
 	m.errorChannel <- errors.New("points service stopped")
 }
 
-func (m *Manager) StartService() error {
+func (m *Service) StartService() error {
 	errorChannel := make(chan error)
 	m.errorChannel = errorChannel
 
-	fmt.Println("Points Manager started.")
+	fmt.Println("Points Service started.")
 	for range time.Tick(10 * time.Second) {
 		select {
 		case err := <-m.errorChannel:
@@ -62,7 +62,7 @@ func (m *Manager) StartService() error {
 	return nil
 }
 
-func (m *Manager) GetUserPoints(userId string) int32 {
+func (m *Service) GetUserPoints(userId string) int32 {
 	_, database := db.Connect()
 	collection := database.Collection("points")
 
@@ -77,7 +77,7 @@ func (m *Manager) GetUserPoints(userId string) int32 {
 	return result.points
 }
 
-func (m *Manager) awardPoints() error {
+func (m *Service) awardPoints() error {
 	m.Lock()
 	defer m.Unlock()
 
@@ -119,6 +119,6 @@ func (m *Manager) awardPoints() error {
 	return nil
 }
 
-func (m *Manager) reply(message string) {
+func (m *Service) reply(message string) {
 
 }

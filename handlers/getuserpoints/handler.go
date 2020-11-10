@@ -9,7 +9,7 @@ import (
 
 type Handler struct {
 	interfaces.MessageHandler
-	PointsManager *points.Manager
+	PointsManager *points.Service
 }
 
 func (h *Handler) ShouldRun() bool {
