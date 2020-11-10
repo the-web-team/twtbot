@@ -137,7 +137,7 @@ func (h *Handler) getUserKarmaDeltas(matches []string) (deltas map[string]int32,
 	return deltas, triedSelf
 }
 
-func (h *Handler) getRoleKarmaDeltas(matches []string) (deltas map[string]int32, err error) {
+func (h *Handler) getRoleKarmaDeltas(matches []string) (map[string]int32, error) {
 	guildMembers, guildMembersError := h.getGuildMembers("")
 	if guildMembersError != nil {
 		return nil, guildMembersError
@@ -164,27 +164,25 @@ func (h *Handler) getRoleKarmaDeltas(matches []string) (deltas map[string]int32,
 	}
 
 	var wg sync.WaitGroup
-	deltas = make(map[string]int32)
-	updateUserDelta := func(member *discordgo.Member) {
-		wg.Add(1)
+	deltas := make(map[string]int32)
+	updateUserDelta := func(member *discordgo.Member, deltas map[string]int32) {
 		if member.User.ID != h.Message.Author.ID {
-			var delta int32
 			for _, roleId := range member.Roles {
 				if _, ok := incrementRoles[roleId]; ok {
-					delta++
+					deltas[member.User.ID]++
 				}
 
 				if _, ok := decrementRoles[roleId]; ok {
-					delta--
+					deltas[member.User.ID]--
 				}
 			}
-			deltas[member.User.ID] = delta
 		}
 		wg.Done()
 	}
 
 	for _, guildMember := range guildMembers {
-		go updateUserDelta(guildMember)
+		wg.Add(1)
+		go updateUserDelta(guildMember, deltas)
 	}
 
 	wg.Wait()
