@@ -14,6 +14,8 @@ import (
 	"twtbot/db"
 )
 
+var Started = false
+
 type Service struct {
 	sync.Mutex
 	queuedPoints map[string]int32
@@ -42,6 +44,10 @@ func (m *Service) StopService() {
 }
 
 func (m *Service) StartService() error {
+	if Started {
+		return errors.New("points service already started")
+	}
+
 	errorChannel := make(chan error)
 	m.errorChannel = errorChannel
 
@@ -52,6 +58,7 @@ func (m *Service) StartService() error {
 			return err
 		default:
 			go func() {
+				Started = true
 				if awardError := m.awardPoints(); awardError != nil {
 					m.errorChannel <- awardError
 				}
@@ -63,14 +70,14 @@ func (m *Service) StartService() error {
 }
 
 func (m *Service) GetUserPoints(userId string) int32 {
-	_, database := db.Connect()
+	_, database := db.GetConnection()
 	collection := database.Collection("points")
 
-	filter := bson.D{{"userId", userId}}
-
 	var result Model
+	filter := bson.D{{"userId", userId}}
 	findError := collection.FindOne(context.TODO(), filter).Decode(&result)
 	if findError != nil {
+		fmt.Println(findError)
 		return 0
 	}
 
@@ -106,7 +113,7 @@ func (m *Service) awardPoints() error {
 		log.Println(fmt.Sprintf("Awarding points to %d users. %s", numOperations, stringRewardees))
 
 		if numOperations > 0 {
-			_, database := db.Connect()
+			_, database := db.GetConnection()
 			collection := database.Collection("points")
 			if _, bulkWriteError := collection.BulkWrite(context.TODO(), operations, bulkOptions); bulkWriteError != nil {
 				return bulkWriteError

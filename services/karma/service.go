@@ -83,7 +83,7 @@ func (s *Service) UpdateUsersKarma(karmaOperations map[string]int32) error {
 		}
 
 		if len(operations) > 0 {
-			_, database := db.Connect()
+			_, database := db.GetConnection()
 			collection := database.Collection("karma")
 			if _, bulkWriteError := collection.BulkWrite(context.TODO(), operations, bulkOptions); bulkWriteError != nil {
 				return bulkWriteError
@@ -94,6 +94,6 @@ func (s *Service) UpdateUsersKarma(karmaOperations map[string]int32) error {
 }
 
 func (s *Service) getCollection() *mongo.Collection {
-	_, database := db.Connect()
+	_, database := db.GetConnection()
 	return database.Collection("karma")
 }

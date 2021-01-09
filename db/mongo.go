@@ -13,7 +13,7 @@ import (
 
 var dbConn *mongo.Client
 
-func Connect() (*mongo.Client, *mongo.Database) {
+func GetConnection() (*mongo.Client, *mongo.Database) {
 	if dbConn == nil {
 		uri := getUri()
 		connOpts := options.Client().ApplyURI(uri).SetReadPreference(readpref.SecondaryPreferred())
