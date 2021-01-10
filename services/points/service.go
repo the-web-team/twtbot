@@ -77,15 +77,11 @@ func (m *Service) GetUserPoints(userId string) int {
 
 	var userPoints UserPointsModel
 	filter := bson.D{{"userId", userId}}
-	fmt.Println(filter)
 	result := collection.FindOne(context.Background(), filter)
 	decodeError := result.Decode(&userPoints)
 	if decodeError != nil {
-		fmt.Println(decodeError)
 		return 0
 	}
-
-	fmt.Println(userPoints)
 
 	return userPoints.Points
 }
