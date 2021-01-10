@@ -81,6 +81,8 @@ func (m *Service) GetUserPoints(userId string) int32 {
 		return 0
 	}
 
+	fmt.Println(result)
+
 	return result.points
 }
 
