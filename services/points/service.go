@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"log"
@@ -22,9 +23,10 @@ type Service struct {
 	errorChannel chan error
 }
 
-type Model struct {
-	userId string
-	points int32
+type UserPointsModel struct {
+	ID     primitive.ObjectID `bson:"_id,omitempty"`
+	UserId string             `bson:"userId,omitempty"`
+	Points int                `bson:"points,omitempty"`
 }
 
 func (m *Service) QueueUser(userId string) {
@@ -69,21 +71,23 @@ func (m *Service) StartService() error {
 	return nil
 }
 
-func (m *Service) GetUserPoints(userId string) int32 {
+func (m *Service) GetUserPoints(userId string) int {
 	_, database := db.GetConnection()
 	collection := database.Collection("points")
 
-	var result Model
+	var userPoints UserPointsModel
 	filter := bson.D{{"userId", userId}}
-	findError := collection.FindOne(context.TODO(), filter).Decode(&result)
-	if findError != nil {
-		fmt.Println(findError)
+	fmt.Println(filter)
+	result := collection.FindOne(context.Background(), filter)
+	decodeError := result.Decode(&userPoints)
+	if decodeError != nil {
+		fmt.Println(decodeError)
 		return 0
 	}
 
-	fmt.Println(result)
+	fmt.Println(userPoints)
 
-	return result.points
+	return userPoints.Points
 }
 
 func (m *Service) awardPoints() error {

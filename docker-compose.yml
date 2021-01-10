@@ -9,9 +9,10 @@ services:
     depends_on:
       - mongo
     environment:
-      MONGO_URI: mongodb://mongo:27017
-      MONGO_DATABASE_NAME: twtbot
-      DISCORD_AUTH_TOKEN: ${DISCORD_AUTH_TOKEN}
+      MONGO_URI: "mongodb://mongo:27017"
+      MONGO_DATABASE_NAME: "twtbot"
+      DISCORD_AUTH_TOKEN: "${DISCORD_AUTH_TOKEN}"
+      ENV: "development"
   mongo:
     image: mongo:latest
     ports:

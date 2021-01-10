@@ -3,6 +3,7 @@ package interfaces
 import (
 	"fmt"
 	"github.com/bwmarrin/discordgo"
+	"os"
 )
 
 type MessageHandler struct {
@@ -46,8 +47,15 @@ func (h *MessageHandler) IsCommand(command string) bool {
 	return command == h.GetCommand()
 }
 
+func (h *MessageHandler) ChannelMessageSend(channelId string, message string) (*discordgo.Message, error) {
+	if os.Getenv("ENV") == "development" {
+		message = message + "\n^=== DEV ===^"
+	}
+	return h.Session.ChannelMessageSend(channelId, message)
+}
+
 func (h *MessageHandler) Reply(message string) error {
-	if _, sendError := h.Session.ChannelMessageSend(h.Message.ChannelID, message); sendError != nil {
+	if _, sendError := h.ChannelMessageSend(h.Message.ChannelID, message); sendError != nil {
 		return sendError
 	}
 	return nil
@@ -55,7 +63,7 @@ func (h *MessageHandler) Reply(message string) error {
 
 func (h *MessageHandler) ReplyWithMention(message string) error {
 	mentionMessage := fmt.Sprintf("%s, %s", h.Message.Author.Mention(), message)
-	if _, sendError := h.Session.ChannelMessageSend(h.Message.ChannelID, mentionMessage); sendError != nil {
+	if _, sendError := h.ChannelMessageSend(h.Message.ChannelID, mentionMessage); sendError != nil {
 		return sendError
 	}
 	return nil
