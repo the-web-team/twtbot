@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"twtbot/discord"
+	"twtbot/handlers/getstockprice"
 	"twtbot/handlers/getuserpoints"
 	"twtbot/handlers/givepoints"
 	"twtbot/handlers/incrementkarma"
@@ -55,6 +56,9 @@ func main() {
 	})
 	client.AttachHandler(func() interfaces.MessageHandlerInterface {
 		return &incrementkarma.Handler{}
+	})
+	client.AttachHandler(func() interfaces.MessageHandlerInterface {
+		return &getstockprice.Handler{}
 	})
 
 	if runError := client.Run(); runError != nil {

@@ -20,13 +20,13 @@ func (h *MessageHandler) Run() error {
 	return nil
 }
 
-func (h *MessageHandler) GetCommand() string {
+func (h *MessageHandler) GetPrefixedCommand(prefix rune) string {
 	runes := []rune(h.Message.Content)
 	isCommand := false
 	var command []rune
 
 	for _, r := range runes {
-		willBeCommand := !isCommand && r == '!'
+		willBeCommand := !isCommand && r == prefix
 		if r == ' ' {
 			break
 		}
@@ -41,6 +41,15 @@ func (h *MessageHandler) GetCommand() string {
 	}
 
 	return string(command)
+}
+
+func (h *MessageHandler) GetCommand() string {
+	return h.GetPrefixedCommand('!')
+}
+
+func (h *MessageHandler) CommandHasPrefix(prefix rune) bool {
+	runes := []rune(h.Message.Content)
+	return runes[0] == prefix
 }
 
 func (h *MessageHandler) IsCommand(command string) bool {

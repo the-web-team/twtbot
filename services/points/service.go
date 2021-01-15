@@ -127,7 +127,3 @@ func (m *Service) awardPoints() error {
 
 	return nil
 }
-
-func (m *Service) reply(message string) {
-
-}
