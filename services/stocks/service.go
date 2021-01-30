@@ -30,11 +30,11 @@ type PolygonResponse struct {
 			TradeID         string  `json:"i"`
 			Price           float64 `json:"p"`
 			Volume          float64 `json:"s"`
-			StartTimestamp  int     `json:"t"`
-			ExchangeID      int     `json:"x"`
+			StartTimestamp  int64   `json:"t"`
+			ExchangeID      int64   `json:"x"`
 		} `json:"lastTrade"`
 		Min struct {
-			AccumulatedVolume      int     `json:"av"`
+			AccumulatedVolume      int64   `json:"av"`
 			OpenPrice              float64 `json:"o"`
 			HighestPrice           float64 `json:"h"`
 			LowestPrice            float64 `json:"l"`
@@ -53,7 +53,7 @@ type PolygonResponse struct {
 		Ticker             string  `json:"ticker"`
 		TodayChange        float64 `json:"todaysChange"`
 		TodayChangePercent float64 `json:"todaysChangePerc"`
-		LastUpdated        int     `json:"updated"`
+		LastUpdated        int64   `json:"updated"`
 	} `json:"ticker"`
 }
 

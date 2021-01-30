@@ -31,6 +31,9 @@ func (h *Handler) Run() error {
 }
 
 func (h *Handler) SendPrice(symbol string, price *stocks.PolygonResponse) error {
+	timeMillis := price.Ticker.LastTrade.StartTimestamp
+	timeNanos := timeMillis * 1000000
+
 	embed := &discordgo.MessageEmbed{
 		Author: &discordgo.MessageEmbedAuthor{
 			Name: "Cryptocurrency",
@@ -42,8 +45,9 @@ func (h *Handler) SendPrice(symbol string, price *stocks.PolygonResponse) error 
 			formatField("Previous Day Close Price", fmt.Sprintf("$%f", price.Ticker.PrevDay.ClosePrice)),
 			formatField("Percent Change Today", fmt.Sprintf("%f%%", price.Ticker.TodayChangePercent)),
 		}, "\n"),
-		Timestamp: time.Now().Format("2006-01-02T15:04:05-0700"),
-		Color:     0x009900,
+		Timestamp: time.Unix(0, timeNanos).Format("2006-01-02T15:04:05-0700"),
+		//Timestamp: time.Now().Format("2006-01-02T15:04:05-0700"),
+		Color: 0x009900,
 		Provider: &discordgo.MessageEmbedProvider{
 			URL:  "https://polygon.io",
 			Name: "Polygon.io",
