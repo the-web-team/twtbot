@@ -1,6 +1,7 @@
 package interfaces
 
 import (
+	"errors"
 	"fmt"
 	"github.com/bwmarrin/discordgo"
 	"os"
@@ -11,6 +12,10 @@ type MessageHandler struct {
 	Session *discordgo.Session
 	Message *discordgo.MessageCreate
 }
+
+type ChannelName string
+type ChannelID string
+type ChannelDictionary map[ChannelName]ChannelID
 
 func (h *MessageHandler) ShouldRun() bool {
 	return true
@@ -76,6 +81,23 @@ func (h *MessageHandler) ReplyWithMention(message string) error {
 		return sendError
 	}
 	return nil
+}
+
+func (h *MessageHandler) IsChannel(channelId string) bool {
+	return h.Message.ChannelID == channelId
+}
+
+func (h *MessageHandler) GetChannelByName(channelName string) (*discordgo.Channel, error) {
+	guild, guildError := h.Session.Guild(h.Message.GuildID)
+	if guildError != nil {
+		return nil, guildError
+	}
+	for _, channel := range guild.Channels {
+		if channel.Name == channelName {
+			return channel, nil
+		}
+	}
+	return nil, errors.New(fmt.Sprintf("channel does not exist by name %s", channelName))
 }
 
 func (h *MessageHandler) SetSession(s *discordgo.Session) {
