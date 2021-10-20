@@ -54,13 +54,13 @@ func (m *Service) StartService() error {
 	m.errorChannel = errorChannel
 
 	fmt.Println("Points Service started.")
+	Started = true
 	for range time.Tick(10 * time.Second) {
 		select {
 		case err := <-m.errorChannel:
 			return err
 		default:
 			go func() {
-				Started = true
 				if awardError := m.awardPoints(); awardError != nil {
 					m.errorChannel <- awardError
 				}
