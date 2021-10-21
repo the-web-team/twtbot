@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"flag"
+	"fmt"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
@@ -14,6 +15,7 @@ import (
 var dbConn *mongo.Client
 
 func GetConnection() (*mongo.Client, *mongo.Database) {
+	fmt.Println("Connecting to database...")
 	if dbConn == nil {
 		uri := getUri()
 		connOpts := options.Client().ApplyURI(uri).SetReadPreference(readpref.SecondaryPreferred())
@@ -29,7 +31,11 @@ func GetConnection() (*mongo.Client, *mongo.Database) {
 			log.Fatal(pingErr)
 		}
 
+		fmt.Println("Connected to database")
+
 		dbConn = session
+	} else {
+		fmt.Println("Already connected to database")
 	}
 
 	return dbConn, dbConn.Database(os.Getenv("MONGO_DATABASE_NAME"))

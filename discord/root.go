@@ -11,11 +11,15 @@ import (
 	"twtbot/interfaces"
 )
 
+type CommandHandler = func(s *discordgo.Session, i *discordgo.InteractionCreate)
+
 type Client struct {
-	session      *discordgo.Session
-	handlers     []interface{}
-	services     []interfaces.BotService
-	errorChannel chan error
+	session         *discordgo.Session
+	handlers        []interface{}
+	commands        []*discordgo.ApplicationCommand
+	commandHandlers map[string]CommandHandler
+	services        []interfaces.BotService
+	errorChannel    chan error
 }
 
 func NewDiscordClient(authToken string) (*Client, error) {
@@ -25,7 +29,12 @@ func NewDiscordClient(authToken string) (*Client, error) {
 		return nil, sessionError
 	}
 	discordClient.session = discord
+	discordClient.commandHandlers = make(map[string]CommandHandler)
 	return discordClient, nil
+}
+
+func (d *Client) GetSession() *discordgo.Session {
+	return d.session
 }
 
 func (d *Client) Run() error {
@@ -41,16 +50,34 @@ func (d *Client) Run() error {
 	}
 
 	go d.launchServices()
+	go d.attachCommands()
 
-	fmt.Println("Discord Bot is running...")
-	sc := make(chan os.Signal, 1)
-	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt, os.Kill)
-	<-sc
+	// Register Command Handlers
+	d.session.AddHandler(func(s *discordgo.Session, i *discordgo.InteractionCreate) {
+		if handler, ok := d.commandHandlers[i.ApplicationCommandData().Name]; ok {
+			handler(s, i)
+		}
+	})
+
+	d.session.AddHandler(func(s *discordgo.Session, r *discordgo.Ready) {
+		fmt.Println("Discord Bot is running...")
+	})
+
+	stop := make(chan os.Signal, 1)
+	signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM, os.Interrupt, os.Kill)
+	<-stop
 
 	// Shutdown Services
+	fmt.Println("Shutting down services...")
 	d.shutdownServicesHandler()
 
+	fmt.Println("Shutting down bot...")
 	return d.session.Close()
+}
+
+func (d *Client) AttachCommand(command *discordgo.ApplicationCommand, handler CommandHandler) {
+	d.commandHandlers[command.Name] = handler
+	d.commands = append(d.commands, command)
 }
 
 func (d *Client) AttachHandler(handler interface{}) {
@@ -83,6 +110,20 @@ func (d *Client) launchServices() {
 				d.errorChannel <- startError
 			}
 		}(service)
+	}
+}
+
+func (d *Client) attachCommands() {
+	fmt.Println(d.session.State.Guilds)
+	for _, command := range d.commands {
+		for _, guild := range d.session.State.Guilds {
+			fmt.Printf("Adding %s slash command to %s guild\n", command.Name, guild.Name)
+			userId := d.session.State.User.ID
+			_, createCommandError := d.session.ApplicationCommandCreate(userId, guild.ID, command)
+			if createCommandError != nil {
+				log.Fatal(createCommandError)
+			}
+		}
 	}
 }
 

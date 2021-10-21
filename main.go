@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"flag"
+	"github.com/bwmarrin/discordgo"
 	"log"
 	"os"
 	"twtbot/discord"
@@ -12,6 +13,7 @@ import (
 	"twtbot/handlers/incrementkarma"
 	"twtbot/handlers/rearrangerhandler"
 	"twtbot/interfaces"
+	"twtbot/services/bosstimers"
 	"twtbot/services/points"
 )
 
@@ -40,6 +42,9 @@ func main() {
 	pointsManager := &points.Service{}
 	client.AttachService(pointsManager)
 
+	bossTimersService := &bosstimers.Service{}
+	client.AttachService(bossTimersService)
+
 	// Handlers
 	client.AttachHandler(func() interfaces.MessageHandlerInterface {
 		return &givepoints.Handler{
@@ -59,6 +64,27 @@ func main() {
 	})
 	client.AttachHandler(func() interfaces.MessageHandlerInterface {
 		return &getstockprice.Handler{}
+	})
+
+	// Slash Commands
+	client.AttachCommand(&discordgo.ApplicationCommand{
+		Type:        discordgo.ChatApplicationCommand,
+		Name:        "registerboss",
+		Description: "Command to register a new boss config",
+	}, func(s *discordgo.Session, i *discordgo.InteractionCreate) {
+		respondError := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+			Type: discordgo.InteractionResponseChannelMessageWithSource,
+			Data: &discordgo.InteractionResponseData{
+				// Note: this isn't documented, but you can use that if you want to.
+				// This flag just allows you to create messages visible only for the caller of the command
+				// (user who triggered the command)
+				//Flags:   1 << 6,
+				Content: "Test!",
+			},
+		})
+		if respondError != nil {
+			log.Fatal(respondError)
+		}
 	})
 
 	if runError := client.Run(); runError != nil {

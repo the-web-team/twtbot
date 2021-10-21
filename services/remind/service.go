@@ -168,5 +168,6 @@ func (r *Service) StartService() error {
 }
 
 func (r *Service) StopService() {
-
+	close(r.errorChannel)
+	Started = false
 }
